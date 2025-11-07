@@ -1,5 +1,6 @@
-program Lesson05;
+program Lesson04;
 
+{$apptype gui}
 {$mode delphi}{$H+}
 
 uses
@@ -7,7 +8,6 @@ uses
     SysUtils,
     Windows,
     DX12.D3D11,
-    DX12.D3D10,
     DX12.D3DCommon,
     DX12.D3DCompiler,
     DX12.DXGI,
@@ -48,22 +48,15 @@ type
     //Vertex Structure and Vertex Layout (Input Layout)//
     TVertex = record    //Overloaded Vertex Structure
         case byte of
-             0:(f: array[0..6] of single);
-            1: (x, y, z: single;
-            cr, cg, cb, ca: single);
-            2: (pos: TXMFLOAT3;
-             color:TXMFLOAT4);
+            0: (x, y, z: single);
+            1: (pos: TXMFLOAT3);
 
     end;
 
 var
-    layout: array [0..1] of TD3D11_INPUT_ELEMENT_DESC = ((SemanticName: 'POSITION'; SemanticIndex: 0;
+    layout: array [0..0] of TD3D11_INPUT_ELEMENT_DESC = ((SemanticName: 'POSITION'; SemanticIndex: 0;
         Format: DXGI_FORMAT_R32G32B32_FLOAT; InputSlot: 0;
-        AlignedByteOffset: 0; InputSlotClass: D3D11_INPUT_PER_VERTEX_DATA; InstanceDataStepRate: 0),
-        (SemanticName: 'COLOR'; SemanticIndex: 0;
-                Format: DXGI_FORMAT_R32G32B32A32_FLOAT; InputSlot: 0;
-                AlignedByteOffset: 12; InputSlotClass: D3D11_INPUT_PER_VERTEX_DATA; InstanceDataStepRate: 0)
-        );
+        AlignedByteOffset: 0; InputSlotClass: D3D11_INPUT_PER_VERTEX_DATA; InstanceDataStepRate: 0));
     numElements: UINT = Length(layout);
     ///////////////**************new**************////////////////////
 
@@ -175,9 +168,7 @@ var
         offset: uint32;
         viewport: TD3D11_VIEWPORT;
         //Create the vertex buffer
-        v: array [0..2] of TVertex = ((f:(0.0, 0.5, 0.5,
-         1.0, 0.0, 0.0, 1.0)), (f:(0.5,-0.5, 0.5, 0.0, 1.0, 0.0, 1.0)),
-         (f:( -0.5, -0.5, 0.5,0.0, 0.0, 1.0, 1.0)));
+        v: array [0..2] of TVertex = ((x: 0.0; y: 0.5; z: 0.5), (x: 0.5; y: -0.5; z: 0.5), (x: -0.5; y: -0.5; z: 0.5));
 
     begin
         //Compile Shaders from shader file
@@ -220,7 +211,7 @@ var
         d3d11DevCon.IASetInputLayout(vertLayout);
 
         //Set Primitive Topology
-        d3d11DevCon.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        d3d11DevCon.IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         //Create the Viewport
 

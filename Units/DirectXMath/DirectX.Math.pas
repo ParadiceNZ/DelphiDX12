@@ -11,6 +11,12 @@ unit DirectX.Math;
 
 {$IFDEF FPC}
 {$mode delphi}{$H+}
+{$rangechecks off}  	// Shorthand unsigned math breaks FPC's rangechecking compiler
+{$warn 5024 off} 		// Suppress "unused parameter" hints
+{$warn 5025 off}		// Suppress "local variable not used" notes
+{$warn 4110 off}		// Suppress constant range check warning
+{$warn 4055 off}		// Alignment check assertions trigger ordinal/pointer hint
+{$warn 5060 off}		// The function result variable initialization is done by move()
 {$ENDIF}
 
 interface

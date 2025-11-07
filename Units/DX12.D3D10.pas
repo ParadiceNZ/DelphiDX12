@@ -35,9 +35,17 @@ unit DX12.D3D10;
   Header version: 10.0.16299.0
 
   ************************************************************************** }
+{$REGION 'Notes'}
+{ **************************************************************************
+  Originally based on the DirectX libaries from CMC. 
+
+  Updated 2025-11-08 to improve adherence to FPC compiler expectations.
+  ************************************************************************** 
+}
 
 {$IFDEF FPC}
 {$mode delphi}{$H+}
+{$warn 5024 off} // Suppress "unused parameter" warnings
 {$ENDIF}
 
 interface
@@ -1085,6 +1093,7 @@ type
     PID3D10InputLayout = ^ID3D10InputLayout;
 
     TD3D10_FILTER = (
+        D3D10_FILTER_TEXT_1BIT = Longint($80000000),
         D3D10_FILTER_MIN_MAG_MIP_POINT = 0,
         D3D10_FILTER_MIN_MAG_POINT_MIP_LINEAR = $1,
         D3D10_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT = $4,
@@ -1102,8 +1111,7 @@ type
         D3D10_FILTER_COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR = $91,
         D3D10_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT = $94,
         D3D10_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR = $95,
-        D3D10_FILTER_COMPARISON_ANISOTROPIC = $d5,
-        D3D10_FILTER_TEXT_1BIT = $80000000
+        D3D10_FILTER_COMPARISON_ANISOTROPIC = $d5
         );
 
     TD3D10_FILTER_TYPE = (

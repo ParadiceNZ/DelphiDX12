@@ -31,14 +31,24 @@
   Header version: 10.0.22621.0
 
   ************************************************************************** }
+  {$REGION 'Notes'}
+{ **************************************************************************
+  Originally based on the DirectX libaries from CMC. 
+
+  Updated 2025-11-08 to improve adherence to FPC compiler expectations:
+   - Fixed incorrect "out" parameter usage in some interfaces
+   - Fixed enum constants to refer to D3D_x rather than D3D11_x values
+	- Explicit typecasts for negative UINT values to prevent 64bit evaluation
+   - Added Assert() calls to touch unused parameters
+	- Added explicit null-actions to case statements
+  ************************************************************************** 
+  }
 unit DX12.D3D11;
 
 {$IFDEF FPC}
-{$MODE delphi}{$H+}
-{$ADVANCEDRECORDS}
+	{$MODE delphi}{$H+}
+	{$modeswitch ADVANCEDRECORDS}
 {$ENDIF}
-
-
 
 
 interface
@@ -1771,10 +1781,10 @@ type
 
     PID3D11Counter = ^ID3D11Counter;
 
-    TD3D11_STANDARD_MULTISAMPLE_QUALITY_LEVELS = (
-        D3D11_STANDARD_MULTISAMPLE_PATTERN = $ffffffff,
-        D3D11_CENTER_MULTISAMPLE_PATTERN = $fffffffe
-        );
+	 TD3D11_STANDARD_MULTISAMPLE_QUALITY_LEVELS = (
+		D3D11_CENTER_MULTISAMPLE_PATTERN   = longint($fffffffe),
+		D3D11_STANDARD_MULTISAMPLE_PATTERN = longint($ffffffff)
+		  );
 
     TD3D11_DEVICE_CONTEXT_TYPE = (
         D3D11_DEVICE_CONTEXT_IMMEDIATE = 0,
@@ -2301,6 +2311,7 @@ type
         );
 
     TD3D11_VIDEO_PROCESSOR_ITELECINE_CAPS = (
+        D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_OTHER = Longint($80000000),
         D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_32 = $1,
         D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_22 = $2,
         D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_2224 = $4,
@@ -2309,8 +2320,7 @@ type
         D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_55 = $20,
         D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_64 = $40,
         D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_87 = $80,
-        D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_222222222223 = $100,
-        D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_OTHER = $80000000
+        D3D11_VIDEO_PROCESSOR_ITELECINE_CAPS_222222222223 = $100
         );
 
     TD3D11_VIDEO_PROCESSOR_RATE_CONVERSION_CAPS = record
@@ -2664,6 +2674,7 @@ type
     end;
 
     TD3D11_BUS_TYPE = (
+		 D3D11_BUS_IMPL_MODIFIER_NON_STANDARD = Longint($80000000),
         D3D11_BUS_TYPE_OTHER = 0,
         D3D11_BUS_TYPE_PCI = $1,
         D3D11_BUS_TYPE_PCIX = $2,
@@ -2673,8 +2684,7 @@ type
         D3D11_BUS_IMPL_MODIFIER_TRACKS_ON_MOTHER_BOARD_TO_CHIP = $20000,
         D3D11_BUS_IMPL_MODIFIER_TRACKS_ON_MOTHER_BOARD_TO_SOCKET = $30000,
         D3D11_BUS_IMPL_MODIFIER_DAUGHTER_BOARD_CONNECTOR = $40000,
-        D3D11_BUS_IMPL_MODIFIER_DAUGHTER_BOARD_CONNECTOR_INSIDE_OF_NUAE = $50000,
-        D3D11_BUS_IMPL_MODIFIER_NON_STANDARD = $80000000
+        D3D11_BUS_IMPL_MODIFIER_DAUGHTER_BOARD_CONNECTOR_INSIDE_OF_NUAE = $50000
         );
 
     TD3D11_AUTHENTICATED_QUERY_ACESSIBILITY_OUTPUT = record
@@ -5085,7 +5095,7 @@ type
         ['{6543dbb6-1b48-42f5-ab82-e97ec74326f6}']
         function SetMessageCountLimit(MessageCountLimit: uint64): HResult; stdcall;
         procedure ClearStoredMessages(); stdcall;
-        function GetMessage(MessageIndex: uint64; out pMessage: PD3D11_MESSAGE; var pMessageByteLength: SIZE_T): HResult; stdcall;
+        function GetMessage(MessageIndex: uint64; pMessage: PD3D11_MESSAGE; var pMessageByteLength: SIZE_T): HResult; stdcall;
         function GetNumMessagesAllowedByStorageFilter(): uint64; stdcall;
         function GetNumMessagesDeniedByStorageFilter(): uint64; stdcall;
         function GetNumStoredMessages(): uint64; stdcall;
@@ -5093,7 +5103,7 @@ type
         function GetNumMessagesDiscardedByMessageCountLimit(): uint64; stdcall;
         function GetMessageCountLimit(): uint64; stdcall;
         function AddStorageFilterEntries(pFilter: PD3D11_INFO_QUEUE_FILTER): HResult; stdcall;
-        function GetStorageFilter(out pFilter: PD3D11_INFO_QUEUE_FILTER; var pFilterByteLength: SIZE_T): HResult; stdcall;
+        function GetStorageFilter(pFilter: PD3D11_INFO_QUEUE_FILTER; var pFilterByteLength: SIZE_T): HResult; stdcall;
         procedure ClearStorageFilter(); stdcall;
         function PushEmptyStorageFilter(): HResult; stdcall;
         function PushCopyOfStorageFilter(): HResult; stdcall;
@@ -5101,7 +5111,7 @@ type
         procedure PopStorageFilter(); stdcall;
         function GetStorageFilterStackSize(): UINT; stdcall;
         function AddRetrievalFilterEntries(pFilter: PD3D11_INFO_QUEUE_FILTER): HResult; stdcall;
-        function GetRetrievalFilter(out pFilter: PD3D11_INFO_QUEUE_FILTER; var pFilterByteLength: SIZE_T): HResult; stdcall;
+        function GetRetrievalFilter(pFilter: PD3D11_INFO_QUEUE_FILTER; var pFilterByteLength: SIZE_T): HResult; stdcall;
         procedure ClearRetrievalFilter(); stdcall;
         function PushEmptyRetrievalFilter(): HResult; stdcall;
         function PushCopyOfRetrievalFilter(): HResult; stdcall;
@@ -5146,7 +5156,8 @@ function D3D11_SHVER_GET_MINOR(_Version: UINT): UINT;
 
 implementation
 
-
+const
+	UINTNEG1 = UINT(-1);		// Prevent FPC complaints about mixing signed and unsigned values
 
 
 function D3D11_SHVER_GET_TYPE(_Version: UINT): UINT;
@@ -5296,8 +5307,8 @@ procedure TD3D11_UNORDERED_ACCESS_VIEW_DESC.Init(AviewDimension: TD3D11_UAV_DIME
 begin
     Format := AFormat;
     ViewDimension := AViewDimension;
-    case (viewDimension) of
 
+    case (viewDimension) of
         D3D11_UAV_DIMENSION_BUFFER:
         begin
             Buffer.FirstElement := mipSlice;
@@ -5330,14 +5341,14 @@ begin
             Texture3D.FirstWSlice := firstArraySlice;
             Texture3D.WSize := arraySize;
         end;
-
+	    else begin end;
     end;
 end;
 
 
-
 procedure TD3D11_UNORDERED_ACCESS_VIEW_DESC.Init(ABuffer: ID3D11Buffer; AFormat: TDXGI_FORMAT; firstElement: UINT; numElements: UINT; flags: UINT);
 begin
+	Assert(ABuffer = ABuffer);
     Format := Aformat;
     ViewDimension := D3D11_UAV_DIMENSION_BUFFER;
     Buffer.FirstElement := firstElement;
@@ -5355,13 +5366,13 @@ begin
     ViewDimension := AviewDimension;
     Format := AFormat;
     lArraySize := arraySize;
-    if (DXGI_FORMAT_UNKNOWN = format) or ((lArraySize = -1) and (viewDimension = D3D11_UAV_DIMENSION_TEXTURE1DARRAY)) then
+    if (DXGI_FORMAT_UNKNOWN = Format) or ((lArraySize = UINTNEG1) and (viewDimension = D3D11_UAV_DIMENSION_TEXTURE1DARRAY)) then
     begin
 
         pTex1D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = format) then
             format := TexDesc.Format;
-        if (-1 = lArraySize) then
+        if (UINTNEG1 = lArraySize) then
             lArraySize := TexDesc.ArraySize - firstArraySlice;
     end;
 
@@ -5377,6 +5388,9 @@ begin
             Texture1DArray.FirstArraySlice := firstArraySlice;
             Texture1DArray.ArraySize := arraySize;
         end;
+	 else
+		  begin
+		  end;
     end;
 
 end;
@@ -5391,13 +5405,13 @@ begin
     ViewDimension := AViewDimension;
     Format := format;
     lArraySize := ArraySize;
-    if (DXGI_FORMAT_UNKNOWN = format) or ((-1 = lArraySize) and (D3D11_UAV_DIMENSION_TEXTURE2DARRAY = viewDimension)) then
+    if (DXGI_FORMAT_UNKNOWN = format) or ((UINTNEG1 = lArraySize) and (D3D11_UAV_DIMENSION_TEXTURE2DARRAY = viewDimension)) then
     begin
 
         pTex2D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = format) then
             format := TexDesc.Format;
-        if (-1 = lArraySize) then
+        if (UINTNEG1 = lArraySize) then
             lArraySize := TexDesc.ArraySize - firstArraySlice;
     end;
 
@@ -5413,6 +5427,9 @@ begin
             Texture2DArray.FirstArraySlice := firstArraySlice;
             Texture2DArray.ArraySize := lArraySize;
         end;
+	 else
+	    begin
+		 end;
     end;
 
 end;
@@ -5427,12 +5444,12 @@ begin
     ViewDimension := D3D11_UAV_DIMENSION_TEXTURE3D;
     Format := Aformat;
     lwSize := wSize;
-    if (DXGI_FORMAT_UNKNOWN = format) or (-1 = lwSize) then
+    if (DXGI_FORMAT_UNKNOWN = format) or (UINTNEG1 = lwSize) then
     begin
         pTex3D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = format) then
             format := TexDesc.Format;
-        if (-1 = lwSize) then
+        if (UINTNEG1 = lwSize) then
             lwSize := TexDesc.Depth - firstWSlice;
     end;
     Texture3D.MipSlice := mipSlice;
@@ -5477,7 +5494,10 @@ begin
             Texture2DMSArray.FirstArraySlice := firstArraySlice;
             Texture2DMSArray.ArraySize := arraySize;
         end;
-    end;
+	 else
+	    begin
+		 end;
+	 end;
 end;
 
 
@@ -5491,12 +5511,12 @@ begin
     Flags := AFlags;
     Format := AFormat;
     lArraySize := arraySize;
-    if (DXGI_FORMAT_UNKNOWN = format) or ((-1 = arraySize) and (D3D11_DSV_DIMENSION_TEXTURE1DARRAY = viewDimension)) then
+    if (DXGI_FORMAT_UNKNOWN = format) or ((UINTNEG1 = larraySize) and (D3D11_DSV_DIMENSION_TEXTURE1DARRAY = viewDimension)) then
     begin
         pTex1D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = format) then
             format := TexDesc.Format;
-        if (-1 = lArraySize) then
+        if (UINTNEG1 = lArraySize) then
             lArraySize := TexDesc.ArraySize - firstArraySlice;
     end;
     case (ViewDimension) of
@@ -5508,6 +5528,7 @@ begin
             Texture1DArray.FirstArraySlice := FirstArraySlice;
             Texture1DArray.ArraySize := lArraySize;
         end;
+	 else begin end;
     end;
 end;
 
@@ -5522,12 +5543,12 @@ begin
     Flags := AFlags;
     Format := AFormat;
     lArraySize := arraySize;
-    if (DXGI_FORMAT_UNKNOWN = format) or ((-1 = lArraySize) and ((D3D11_DSV_DIMENSION_TEXTURE2DARRAY = viewDimension) or (D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY = viewDimension))) then
+    if (DXGI_FORMAT_UNKNOWN = format) or ((UINTNEG1 = lArraySize) and ((D3D11_DSV_DIMENSION_TEXTURE2DARRAY = viewDimension) or (D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY = viewDimension))) then
     begin
         pTex2D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = format) then
             format := TexDesc.Format;
-        if (-1 = lArraySize) then
+        if (UINTNEG1 = lArraySize) then
             lArraySize := TexDesc.ArraySize - firstArraySlice;
     end;
 
@@ -5552,6 +5573,7 @@ begin
             Texture2DMSArray.FirstArraySlice := firstArraySlice;
             Texture2DMSArray.ArraySize := arraySize;
         end;
+		  else begin end;
     end;
 end;
 
@@ -5618,13 +5640,15 @@ begin
             Texture3D.FirstWSlice := firstArraySlice;
             Texture3D.WSize := arraySize;
         end;
-    end;
+		  else begin end;
+	 end;
 end;
 
 
 
 procedure TD3D11_RENDER_TARGET_VIEW_DESC.Init(pBuffer: ID3D11Buffer; AFormat: TDXGI_FORMAT; FirstElement: UINT; numElements: UINT);
 begin
+   Assert(pBuffer = pBuffer);
     Format := AFormat;
     ViewDimension := D3D11_RTV_DIMENSION_BUFFER;
     Buffer.FirstElement := firstElement;
@@ -5641,12 +5665,12 @@ begin
     ViewDimension := AviewDimension;
     Format := AFormat;
     lArraySize := arraySize;
-    if (DXGI_FORMAT_UNKNOWN = Format) or ((-1 = lArraySize) and (D3D11_RTV_DIMENSION_TEXTURE1DARRAY = viewDimension)) then
+    if (DXGI_FORMAT_UNKNOWN = Format) or ((UINTNEG1 = lArraySize) and (D3D11_RTV_DIMENSION_TEXTURE1DARRAY = viewDimension)) then
     begin
         pTex1D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = format) then
             format := TexDesc.Format;
-        if (-1 = lArraySize) then
+        if (UINTNEG1 = lArraySize) then
             lArraySize := TexDesc.ArraySize - firstArraySlice;
     end;
     case (viewDimension) of
@@ -5660,6 +5684,7 @@ begin
             Texture1DArray.FirstArraySlice := firstArraySlice;
             Texture1DArray.ArraySize := lArraySize;
         end;
+		  else begin end;
     end;
 end;
 
@@ -5673,12 +5698,12 @@ begin
     ViewDimension := AViewDimension;
     Format := AFormat;
     lArraySize := ArraySize;
-    if (DXGI_FORMAT_UNKNOWN = format) or ((-1 = lArraySize) and ((D3D11_RTV_DIMENSION_TEXTURE2DARRAY = viewDimension) or (D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY = viewDimension))) then
+    if (DXGI_FORMAT_UNKNOWN = format) or ((UINTNEG1 = lArraySize) and ((D3D11_RTV_DIMENSION_TEXTURE2DARRAY = viewDimension) or (D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY = viewDimension))) then
     begin
         pTex2D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = format) then
             format := TexDesc.Format;
-        if (-1 = lArraySize) then
+        if (UINTNEG1 = lArraySize) then
             lArraySize := TexDesc.ArraySize - FirstArraySlice;
     end;
     case (viewDimension) of
@@ -5700,6 +5725,7 @@ begin
             Texture2DMSArray.FirstArraySlice := firstArraySlice;
             Texture2DMSArray.ArraySize := lArraySize;
         end;
+		  else begin end;
     end;
 end;
 
@@ -5713,12 +5739,12 @@ begin
     Format := AFormat;
     lwSize := wSize;
     ViewDimension := D3D11_RTV_DIMENSION_TEXTURE3D;
-    if (DXGI_FORMAT_UNKNOWN = format) or (-1 = lwSize) then
+    if (DXGI_FORMAT_UNKNOWN = format) or (UINTNEG1 = lwSize) then
     begin
         pTex3D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = format) then
             format := TexDesc.Format;
-        if (-1 = lwSize) then
+        if (UINTNEG1 = lwSize) then
             lwSize := TexDesc.Depth - firstWSlice;
     end;
     Texture3D.MipSlice := mipSlice;
@@ -5733,66 +5759,67 @@ begin
     Format := AFormat;
     ViewDimension := AViewDimension;
     case (AViewDimension) of
-        D3D11_SRV_DIMENSION_BUFFER:
+	     D3D_SRV_DIMENSION_BUFFER:
         begin
             Buffer.FirstElement := AmostDetailedMip;
             Buffer.NumElements := AmipLevels;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE1D:
+        D3D_SRV_DIMENSION_TEXTURE1D:
         begin
             Texture1D.MostDetailedMip := AmostDetailedMip;
             Texture1D.MipLevels := AmipLevels;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE1DARRAY:
+        D3D_SRV_DIMENSION_TEXTURE1DARRAY:
         begin
             Texture1DArray.MostDetailedMip := AmostDetailedMip;
             Texture1DArray.MipLevels := AmipLevels;
             Texture1DArray.FirstArraySlice := AfirstArraySlice;
             Texture1DArray.ArraySize := AarraySize;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE2D:
+        D3D_SRV_DIMENSION_TEXTURE2D:
         begin
             Texture2D.MostDetailedMip := AmostDetailedMip;
             Texture2D.MipLevels := AmipLevels;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE2DARRAY:
+        D3D_SRV_DIMENSION_TEXTURE2DARRAY:
         begin
             Texture2DArray.MostDetailedMip := AmostDetailedMip;
             Texture2DArray.MipLevels := AmipLevels;
             Texture2DArray.FirstArraySlice := AfirstArraySlice;
             Texture2DArray.ArraySize := AarraySize;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE2DMS:
+        D3D_SRV_DIMENSION_TEXTURE2DMS:
         begin
         end;
-        D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY:
+        D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
         begin
             Texture2DMSArray.FirstArraySlice := AfirstArraySlice;
             Texture2DMSArray.ArraySize := AarraySize;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE3D:
+        D3D_SRV_DIMENSION_TEXTURE3D:
         begin
             Texture3D.MostDetailedMip := AmostDetailedMip;
             Texture3D.MipLevels := AmipLevels;
         end;
-        D3D11_SRV_DIMENSION_TEXTURECUBE:
+        D3D_SRV_DIMENSION_TEXTURECUBE:
         begin
             TextureCube.MostDetailedMip := AmostDetailedMip;
             TextureCube.MipLevels := AMipLevels;
         end;
-        D3D11_SRV_DIMENSION_TEXTURECUBEARRAY:
+        D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
         begin
             TextureCubeArray.MostDetailedMip := AmostDetailedMip;
             TextureCubeArray.MipLevels := AmipLevels;
             TextureCubeArray.First2DArrayFace := AfirstArraySlice;
             TextureCubeArray.NumCubes := AarraySize;
         end;
-        D3D11_SRV_DIMENSION_BUFFEREX:
+        D3D_SRV_DIMENSION_BUFFEREX:
         begin
             BufferEx.FirstElement := AmostDetailedMip;
             BufferEx.NumElements := AmipLevels;
             BufferEx.Flags := Aflags;
         end;
+		  else begin end;
     end;
 end;
 
@@ -5800,8 +5827,9 @@ end;
 
 procedure TD3D11_SHADER_RESOURCE_VIEW_DESC.Init(ABuffer: ID3D11Buffer; Aformat: TDXGI_FORMAT; AfirstElement: UINT; AnumElements: UINT; Aflags: UINT);
 begin
+   Assert(ABuffer = ABuffer);
     Format := Aformat;
-    ViewDimension := D3D11_SRV_DIMENSION_BUFFEREX;
+    ViewDimension := D3D_SRV_DIMENSION_BUFFEREX;
     BufferEx.FirstElement := AFirstElement;
     BufferEx.NumElements := ANumElements;
     BufferEx.Flags := AFlags;
@@ -5818,31 +5846,31 @@ begin
     lMipLevels := AmipLevels;
     lArraySize := AArraySize;
     ViewDimension := AviewDimension;
-    if (DXGI_FORMAT_UNKNOWN = Aformat) or (-1 = lMipLevels) or ((-1 = lArraySize) and (D3D11_SRV_DIMENSION_TEXTURE1DARRAY = viewDimension)) then
+    if (DXGI_FORMAT_UNKNOWN = Aformat) or (UINTNEG1 = lMipLevels) or ((UINTNEG1 = lArraySize) and (D3D_SRV_DIMENSION_TEXTURE1DARRAY = viewDimension)) then
     begin
         pTex1D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = Aformat) then
             format := TexDesc.Format;
-        if (-1 = lMipLevels) then
+        if (UINTNEG1 = lMipLevels) then
             lMipLevels := TexDesc.MipLevels - AmostDetailedMip;
-        if (-1 = lArraySize) then
+        if (UINTNEG1 = lArraySize) then
             lArraySize := TexDesc.ArraySize - AfirstArraySlice;
     end;
     Format := Aformat;
     case (viewDimension) of
-        D3D11_SRV_DIMENSION_TEXTURE1D:
+        D3D_SRV_DIMENSION_TEXTURE1D:
         begin
             Texture1D.MostDetailedMip := AMostDetailedMip;
             Texture1D.MipLevels := lMipLevels;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE1DARRAY:
+        D3D_SRV_DIMENSION_TEXTURE1DARRAY:
         begin
             Texture1DArray.MostDetailedMip := AmostDetailedMip;
             Texture1DArray.MipLevels := lMipLevels;
             Texture1DArray.FirstArraySlice := AfirstArraySlice;
             Texture1DArray.ArraySize := lArraySize;
         end;
-
+		  else begin end;
     end;
 end;
 
@@ -5858,54 +5886,55 @@ begin
     Format := AFormat;
     lMipLevels := AMipLevels;
     lArraySize := AarraySize;
-    if (DXGI_FORMAT_UNKNOWN = Format) or ((-1 = lMipLevels) and (D3D11_SRV_DIMENSION_TEXTURE2DMS <> viewDimension) and (D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY <> viewDimension)) or
-        ((-1 = lArraySize) and ((D3D11_SRV_DIMENSION_TEXTURE2DARRAY = viewDimension) or (D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY = viewDimension) or (D3D11_SRV_DIMENSION_TEXTURECUBEARRAY = viewDimension))) then
+    if (DXGI_FORMAT_UNKNOWN = Format) or ((UINTNEG1 = lMipLevels) and (D3D_SRV_DIMENSION_TEXTURE2DMS <> viewDimension) and (D3D_SRV_DIMENSION_TEXTURE2DMSARRAY <> viewDimension)) or
+        ((UINTNEG1 = lArraySize) and ((D3D_SRV_DIMENSION_TEXTURE2DARRAY = viewDimension) or (D3D_SRV_DIMENSION_TEXTURE2DMSARRAY = viewDimension) or (D3D_SRV_DIMENSION_TEXTURECUBEARRAY = viewDimension))) then
     begin
         pTex2D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = Format) then
             Format := TexDesc.Format;
-        if (-1 = lMipLevels) then
+        if (UINTNEG1 = lMipLevels) then
             lMipLevels := TexDesc.MipLevels - AMostDetailedMip;
-        if (-1 = lArraySize) then
+        if (UINTNEG1 = lArraySize) then
         begin
             lArraySize := TexDesc.ArraySize - AFirstArraySlice;
-            if (D3D11_SRV_DIMENSION_TEXTURECUBEARRAY = viewDimension) then
+            if (D3D_SRV_DIMENSION_TEXTURECUBEARRAY = viewDimension) then
                 lArraySize := lArraySize div 6;
         end;
     end;
     case (viewDimension) of
-        D3D11_SRV_DIMENSION_TEXTURE2D:
+        D3D_SRV_DIMENSION_TEXTURE2D:
         begin
             Texture2D.MostDetailedMip := AMostDetailedMip;
             Texture2D.MipLevels := lMipLevels;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE2DARRAY:
+        D3D_SRV_DIMENSION_TEXTURE2DARRAY:
         begin
             Texture2DArray.MostDetailedMip := AMostDetailedMip;
             Texture2DArray.MipLevels := lMipLevels;
             Texture2DArray.FirstArraySlice := AFirstArraySlice;
             Texture2DArray.ArraySize := lArraySize;
         end;
-        D3D11_SRV_DIMENSION_TEXTURE2DMS:
+        D3D_SRV_DIMENSION_TEXTURE2DMS:
         begin
         end;
-        D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY:
+        D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:
         begin
             Texture2DMSArray.FirstArraySlice := AFirstArraySlice;
             Texture2DMSArray.ArraySize := lArraySize;
         end;
-        D3D11_SRV_DIMENSION_TEXTURECUBE:
+        D3D_SRV_DIMENSION_TEXTURECUBE:
         begin
             TextureCube.MostDetailedMip := AMostDetailedMip;
             TextureCube.MipLevels := lMipLevels;
         end;
-        D3D11_SRV_DIMENSION_TEXTURECUBEARRAY:
+        D3D_SRV_DIMENSION_TEXTURECUBEARRAY:
         begin
             TextureCubeArray.MostDetailedMip := AMostDetailedMip;
             TextureCubeArray.MipLevels := lMipLevels;
             TextureCubeArray.First2DArrayFace := AFirstArraySlice;
             TextureCubeArray.NumCubes := lArraySize;
         end;
+		  else begin end;
     end;
 end;
 
@@ -5917,14 +5946,14 @@ var
     lMipLevels: UINT;
 begin
     lMipLevels := AMipLevels;
-    ViewDimension := D3D11_SRV_DIMENSION_TEXTURE3D;
+    ViewDimension := D3D_SRV_DIMENSION_TEXTURE3D;
     Format := AFormat;
-    if (DXGI_FORMAT_UNKNOWN = Format) or (lMipLevels = -1) then
+    if (DXGI_FORMAT_UNKNOWN = Format) or (lMipLevels = UINTNEG1) then
     begin
         pTex3D.GetDesc(TexDesc);
         if (DXGI_FORMAT_UNKNOWN = Format) then
             Format := TexDesc.Format;
-        if (lMipLevels = -1) then
+        if (lMipLevels = UINTNEG1) then
             lMipLevels := TexDesc.MipLevels - AMostDetailedMip;
     end;
     Texture3D.MostDetailedMip := AMostDetailedMip;
@@ -6118,13 +6147,13 @@ var
     RTVDesc: TD3D11_RENDER_TARGET_VIEW_DESC;
     NumElements: UINT;
 begin
-
+   Assert(Inbuffer = Inbuffer);
     pRTView.GetDesc(RTVDesc);
     NumElements := 0;
     case (RTVDesc.ViewDimension) of
-
         D3D11_RTV_DIMENSION_BUFFER:
             NumElements := RTVDesc.Buffer.NumElements;
+		 else begin end;
     end;
     TopLeftX := topLeftX;
     TopLeftY := 0.0;
@@ -6155,9 +6184,10 @@ begin
 
         D3D11_RTV_DIMENSION_TEXTURE1DARRAY:
             MipSlice := RTVDesc.Texture1DArray.MipSlice;
+	 else begin end;
     end;
 
-    SubResourceWidth := TexDesc.Width div (1 shl MipSlice);
+    SubResourceWidth := TexDesc.Width div UINT(1 shl MipSlice);
     TopLeftX := topLeftX;
     TopLeftY := 0.0;
     // Width := (SubResourceWidth ? SubResourceWidth : 1) - topLeftX; C++ is bull shit
@@ -6193,11 +6223,11 @@ begin
 
         D3D11_RTV_DIMENSION_TEXTURE2DARRAY:
             MipSlice := RTVDesc.Texture2DArray.MipSlice;
-
+	 else begin end;
     end;
 
-    SubResourceWidth := TexDesc.Width div (1 shl MipSlice);
-    SubResourceHeight := TexDesc.Height div (1 shl MipSlice);
+    SubResourceWidth := TexDesc.Width div UINT(1 shl MipSlice);
+    SubResourceHeight := TexDesc.Height div UINT(1 shl MipSlice);
     TopLeftX := topLeftX;
     TopLeftY := topLeftY;
     // Width := (SubResourceWidth ? SubResourceWidth : 1) - topLeftX; C++ is bull shit
@@ -6233,10 +6263,11 @@ begin
     case (RTVDesc.ViewDimension) of
         D3D11_RTV_DIMENSION_TEXTURE3D:
             MipSlice := RTVDesc.Texture3D.MipSlice;
+	 else begin end;
     end;
 
-    SubResourceWidth := TexDesc.Width div (1 shl MipSlice);
-    SubResourceHeight := TexDesc.Height div (1 shl MipSlice);
+    SubResourceWidth := TexDesc.Width div UINT(1 shl MipSlice);
+    SubResourceHeight := TexDesc.Height div UINT(1 shl MipSlice);
     TopLeftX := topLeftX;
     TopLeftY := topLeftY;
     // Width := (SubResourceWidth ? SubResourceWidth : 1) - topLeftX;  C++ is bull shit

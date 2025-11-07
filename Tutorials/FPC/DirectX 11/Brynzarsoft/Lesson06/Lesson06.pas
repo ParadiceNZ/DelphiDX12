@@ -7,7 +7,6 @@ uses
     SysUtils,
     Windows,
     DX12.D3D11,
-    DX12.D3D10,
     DX12.D3DCommon,
     DX12.D3DCompiler,
     DX12.DXGI,
@@ -246,7 +245,7 @@ var
         d3d11DevCon.IASetInputLayout(vertLayout);
 
         //Set Primitive Topology
-        d3d11DevCon.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        d3d11DevCon.IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         //Create the Viewport
 

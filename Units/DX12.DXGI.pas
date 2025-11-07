@@ -38,6 +38,15 @@
   Header version: 10.0.22621.0
 
   ************************************************************************** }
+{$REGION 'Notes'}
+{ **************************************************************************
+  Originally based on the DirectX libaries from CMC. 
+
+  Updated 2025-11-08 to improve adherence to FPC compiler expectations:
+  - Fixed "_FORCE_DWORD" values in enums to $7fffffff, for range checking
+  - Explicit typecast to Longint($-1) for enum valuess where required
+  ************************************************************************** 
+  }
 unit DX12.DXGI;
 
 {$IFDEF FPC}
@@ -261,7 +270,7 @@ type
     DXGI_FORMAT_SAMPLER_FEEDBACK_MIN_MIP_OPAQUE = 189,
     DXGI_FORMAT_SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE = 190,
 
-    DXGI_FORMAT_FORCE_UINT = $ffffffff);
+    DXGI_FORMAT_FORCE_UINT = ($7fffffff));
 
   PDXGI_FORMAT = ^TDXGI_FORMAT;
 
@@ -409,6 +418,7 @@ type
 
 
   TDXGI_COLOR_SPACE_TYPE = (
+    DXGI_COLOR_SPACE_CUSTOM = Longint($FFFFFFFF),
     DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 = 0,
     DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709 = 1,
     DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P709 = 2,
@@ -433,8 +443,8 @@ type
     DXGI_COLOR_SPACE_RGB_STUDIO_G24_NONE_P2020 = 21,
     DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_LEFT_P709 = 22,
     DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_LEFT_P2020 = 23,
-    DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_TOPLEFT_P2020 = 24,
-    DXGI_COLOR_SPACE_CUSTOM = $FFFFFFFF);
+    DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_TOPLEFT_P2020 = 24
+    );
 
   TDXGI_JPEG_DC_HUFFMAN_TABLE = record
     CodeCounts: array [0..11] of byte;
@@ -685,7 +695,7 @@ type
     DXGI_ADAPTER_FLAG_NONE = 0,
     DXGI_ADAPTER_FLAG_REMOTE = 1,
     DXGI_ADAPTER_FLAG_SOFTWARE = 2,
-    DXGI_ADAPTER_FLAG_FORCE_DWORD = $ffffffff
+    DXGI_ADAPTER_FLAG_FORCE_DWORD = $7fffffff
     );
 
   TDXGI_ADAPTER_DESC1 = record
