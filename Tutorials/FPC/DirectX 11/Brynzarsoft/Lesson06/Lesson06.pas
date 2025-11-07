@@ -245,7 +245,7 @@ var
         d3d11DevCon.IASetInputLayout(vertLayout);
 
         //Set Primitive Topology
-        d3d11DevCon.IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        d3d11DevCon.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         //Create the Viewport
 
