@@ -197,7 +197,7 @@ begin
     hr := S_OK;
     if (m_pRT = nil) then
     begin
-        //ZeroMemory(@rc,SizeOf(rc));
+        ZeroMemory(@rc,SizeOf(rc));
         GetClientRect(m_hwnd, rc);
         size := DX12.D2D1.SizeU(rc.right - rc.left, rc.bottom - rc.top);
         // Create a D2D render target
@@ -278,10 +278,11 @@ begin
     //ZeroMemory(@time,Sizeof(Time));
     QueryPerformanceCounter(time);
     m_times.Add(time);
+
     Result := CreateDeviceResources();
     if (SUCCEEDED(Result) and not (Ord(m_pRT.CheckWindowState) and Ord(D2D1_WINDOW_STATE_OCCLUDED) = Ord(D2D1_WINDOW_STATE_OCCLUDED))) then
     begin
-        // ZeroMemory(@transform,Sizeof(transform));
+        ZeroMemory(@transform,Sizeof(transform));
         CalculateTransform(transform);
         m_pRT.BeginDraw();
         m_pRT.Clear(DX12.D2D1.ColorF(DX12.D2D1.White));
@@ -293,7 +294,7 @@ begin
             // on the render target. Given that we have offset the text in the
             // A8 target by the overhang offset, we must factor that into the
             // destination rect now.
-            opacityRTSize := m_pOpacityRT.GetSize;
+            m_pOpacityRT.GetSize(opacityRTSize);
             offset := DX12.D2D1.Point2F(-textMetrics.Width / 2.0 - m_overhangOffset.x, -textMetrics.Height / 2.0 - m_overhangOffset.y);
             // Round the offset to the nearest pixel. Note that the rounding
             // done here is unecessary, but it causes the text to be less
@@ -557,6 +558,8 @@ var
     translationOffset: single;
     scaleMultiplier: single;
     size: TD2D1_SIZE_F;
+    hw : hwnd;
+
 begin
     // calculate a 't' value that will linearly interpolate from 0 to 1 and back every 20 seconds
     currentTime := GetTickCount64();
@@ -590,7 +593,7 @@ begin
     end;
     if Assigned(m_pRT) then
     begin
-        size := m_pRT.GetSize;
+        m_pRT.GetSize(size);
     end;
     pTransform := DX12.D2D1.Matrix3x2F_Rotation(rotation, DX12.D2D1.Point2F(0, 0)) * DX12.D2D1.Matrix3x2F_Scale(scaleMultiplier,
         scaleMultiplier, DX12.D2D1.Point2F(0, 0)) * DX12.D2D1.Matrix3x2F_Translation(translationOffset + size.Width / 2.0,
@@ -704,7 +707,7 @@ var
     Height: uint;
     ps: PAINTSTRUCT;
 begin
-     //ZeroMemory(@ps,Sizeof(ps));
+    ZeroMemory(@ps,Sizeof(ps));
     case (umessage) of
         WM_SIZE:
         begin
@@ -775,7 +778,7 @@ end;
 
 {/******************************************************************
 *                                                                 *
-*  DemoApp.Initialize                                            *
+*  DemoApp.Initialize                                             *
 *                                                                 *
 *  Create application window and device-independent resources     *
 *                                                                 *
@@ -836,9 +839,9 @@ begin
 end;
 
 
-{/******************************************************************
+{/*****************************************************************
 *                                                                 *
-*  DemoApp.RunMessageLoop                                        *
+*  DemoApp.RunMessageLoop                                         *
 *                                                                 *
 *  Main window message loop                                       *
 *                                                                 *
@@ -847,7 +850,7 @@ procedure TDemoApp.RunMessageLoop;
 var
     msg: TMsg;
 begin
-	//ZeroMemory(@msg,sizeof(msg));
+	 ZeroMemory(@msg,sizeof(msg));
     while (self.IsRunning()) do
     begin
         if (PeekMessage(msg, 0, 0, 0, PM_REMOVE)) then

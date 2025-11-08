@@ -49,25 +49,16 @@
 
 {$REGION 'Notes'}
 { **************************************************************************
-  Use the DirectX libaries from CMC. They are NOT based on the JSB headers
+  Based on the DirectX libaries from CMC.
 
-  The HelperFiles are translated to be used with Delphi/FPC. Therefore there are
-  more functions then in the original header file since Pascal syntax doesn't
-  support default values of a function as a result of another function.
-
-  But the use should be straight forward. Looks to the examples if any
-  questions.
-
-  WHEN you should use this headers: if you plan a new software release and
-     you are not based on much older source code.
-  WHEN you should NOT use this heades: when you have existing source code
-    based on the JSB headers and don't want to change a LOT.
-
-  You MUST use this if you work with FPC. The JSB Headers are buggy for FPC
-  cause interfaces not based on IUnknown are solved with abstract classes
-  in Delphi, which will not work on FPC. FPC has the CORBA Interface
-  compiler switch.
-  Also FPC supports BITPACKED RECORDS and INLINE functions in COM Interfaces.
+  Updated 2025-11-09; there's a bug in Microsoft's D2D interface definitions,
+  which cause functions which return small records to compile incorrectly.
+  functions like ID3D11RenderTarget.GetSize, which is documented as returning
+  a D2D1_SIZE_F record. To force this to compile correctly on both 64 & 32-bit
+  targets, the interface definition has been altered to define these as
+  procedures with OUT parameters, rather than return values. See
+     https://devblogs.microsoft.com/oldnewthing/20220113-00/?p=106152
+  for more information.
 
   ************************************************************************** }
 {$ENDREGION}
@@ -76,8 +67,8 @@ unit DX12.D2D1;
 
 {$IFDEF FPC}
 {$MODE delphi}{$H+}
-{$warn 3057 off} // Disable inherited method warnings for interfaces
-{$modeswitch typehelpers}{$H+}{$I-}
+{$define DX12_FPC_FIXES}
+{$modeswitch typehelpers}{$H+}{.I-}
 {$ENDIF}
 
 interface
@@ -487,7 +478,6 @@ type
         class operator Multiply(a: TD2D_MATRIX_3X2_F; b: TD2D_MATRIX_3X2_F): TD2D_MATRIX_3X2_F; overload;
         class operator Multiply(a: TD2D_POINT_2F; b: TD2D_MATRIX_3X2_F): TD2D_POINT_2F;
             overload;
-
 
         procedure Identity;
         procedure Translation(size: TD2D_SIZE_F); overload;
@@ -2683,14 +2673,12 @@ type
         procedure PopAxisAlignedClip(); stdcall;
         procedure Clear(const ClearColor: PD2D1_COLOR_F = nil); stdcall;
         procedure BeginDraw(); stdcall;
-        function EndDraw({out}tag1: PD2D1_TAG = nil;
-        {out} Tag2: PD2D1_TAG = nil): HResult; stdcall;
-        function GetPixelFormat(): TD2D1_PIXEL_FORMAT; stdcall;
+        function  EndDraw(Tag1: PD2D1_TAG = nil; Tag2: PD2D1_TAG = nil): HResult; stdcall;
+        procedure GetPixelFormat(out pixelFormat: TD2D1_PIXEL_FORMAT); stdcall;
         procedure SetDpi(dpiX: single; dpiY: single); stdcall;
         procedure GetDpi(out dpiX: single; out dpiY: single); stdcall;
-        function GetSize(): TD2D1_SIZE_F; stdcall;
-        function GetPixelSize(): TD2D1_SIZE_U; stdcall;
-
+	     procedure GetSize(out size: TD2D1_SIZE_F); stdcall;					// Returns the size of the render target in DIPs.
+		  procedure GetPixelSize(out pixelSize: TD2D1_SIZE_U); stdcall;	// Returns the size of the render target in pixels.
         function GetMaximumBitmapSize(): uint32; stdcall;
         function IsSupported(const renderTargetProperties: PD2D1_RENDER_TARGET_PROPERTIES): longbool; stdcall;
     end;
@@ -2791,7 +2779,7 @@ type
     ID2D1HwndRenderTarget = interface(ID2D1RenderTarget)
         ['{2cd90698-12e2-11dc-9fed-001143a055f9}']
         function CheckWindowState(): TD2D1_WINDOW_STATE; stdcall;
-        function Resize(pixelSize: PD2D1_SIZE_U): HResult; stdcall;
+        function Resize(const pixelSize: PD2D1_SIZE_U): HResult; stdcall;
         function GetHwnd(): hwnd; stdcall;
     end;
 
@@ -3195,7 +3183,9 @@ type
         procedure DrawImage(effect: ID2D1Effect; targetOffset: TD2D1_POINT_2F; const imageRectangle: TD2D1_RECT_F;
             interpolationMode: TD2D1_INTERPOLATION_MODE = D2D1_INTERPOLATION_MODE_LINEAR;
             compositeMode: TD2D1_COMPOSITE_MODE = D2D1_COMPOSITE_MODE_SOURCE_OVER); stdcall; overload;
+		{$ifndef DX12_FPC_FIXES}
         procedure PushLayer(const layerParameters: TD2D1_LAYER_PARAMETERS1; layer: ID2D1Layer); stdcall; overload;
+		{$endif}
         procedure DrawGdiMetafile(gdiMetafile: ID2D1GdiMetafile; targetOffset: TD2D1_POINT_2F); stdcall; overload;
         procedure DrawBitmap(bitmap: ID2D1Bitmap; const destinationRectangle: TD2D1_RECT_F; opacity: single;
             interpolationMode: TD2D1_INTERPOLATION_MODE; const sourceRectangle: PD2D1_RECT_F = nil;
@@ -4694,12 +4684,12 @@ begin
 end;
 
 
-
+{$ifndef DX12_FPC_FIXES}
 procedure ID2D1DeviceContextHelper.PushLayer(const layerParameters: TD2D1_LAYER_PARAMETERS1; layer: ID2D1Layer); stdcall;
 begin
-    inherited PushLayer(@layerParameters, layer);
+    ID2D1DeviceContext.PushLayer(@layerParameters, layer);
 end;
-
+{$endif}
 
 
 procedure ID2D1DeviceContextHelper.DrawGdiMetafile(gdiMetafile: ID2D1GdiMetafile; targetOffset: TD2D1_POINT_2F); stdcall;
@@ -4766,7 +4756,8 @@ begin
     if (inputEffect <> nil) then
     begin
         inputEffect.GetOutput(output);
-    end;
+    end else
+		output := nil;
     SetInput(index, output, invalidate);
     output := nil;
 end;
