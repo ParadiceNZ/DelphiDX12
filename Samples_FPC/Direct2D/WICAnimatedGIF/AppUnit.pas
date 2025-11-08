@@ -6,7 +6,7 @@ interface
 
 uses
     Windows, Classes, SysUtils, ActiveX,
-    DX12.D2D1, DX12.WinCodec, CMC.COMBaseAPI;
+    DX12.D2D1, DX12.WinCodec;
 
 const
     DEFAULT_DPI = 96.0;   // Default DPI that maps image resolution directly to screen resoltuion
@@ -87,46 +87,14 @@ type
 
 implementation
 
+                   
+function PropVariantClear(var pvar: PROPVARIANT): HResult; stdcall; external 'ole32.dll';
 
 
 procedure SafeRelease(ppInterfaceToRelease: IUnknown);
 begin
     if ppInterfaceToRelease <> nil then
         ppInterfaceToRelease := nil;
-end;
-
-
-
-procedure FreeProcInstance(ProcInstance: Pointer);
-begin
-    FreeMem(ProcInstance, 15);
-end;
-
-
-
-function MakeProcInstance(M: TMethod): Pointer;
-begin
-    GetMem(Result, 15);
-    asm
-               // MOV ECX,
-               MOV     BYTE PTR [EAX], $B9
-               MOV     ECX, M.Data
-               MOV     DWORD PTR [EAX+$1], ECX
-               // POP EDX (put old jump back adress to EDX)
-               MOV     BYTE PTR [EAX+$5], $5A
-               // PUSH ECX (add "self" as parameter 0)
-               MOV     BYTE PTR [EAX+$6], $51
-               // PUSH EDX (put jump back adress back on stack)
-               MOV     BYTE PTR [EAX+$7], $52
-               // MOV ECX, (move adress to ECX)
-               MOV     BYTE PTR [EAX+$8], $B9
-               MOV     ECX, M.Code
-               MOV     DWORD PTR [EAX+$9], ECX
-               // JMP ECX (jump to first put down command and call method)
-               MOV     BYTE PTR [EAX+$D], $FF
-               MOV     BYTE PTR [EAX+$E], $E1
-               // No call here or there would be another jump back adress on the stack
-    end;
 end;
 
 
@@ -143,6 +111,28 @@ begin
     Result := rc.bottom - rc.top;
 end;
 
+
+function JumpWndProc(Handle: HWND; umessage: UINT; wpara: wparam; lpara: lparam): LRESULT; stdcall;
+var
+	Instance			:	TDemoApp;
+	CreateParams	:	LPCREATESTRUCT;
+begin
+	if umessage = WM_NCCREATE then begin
+		// TDemoApp.Self instance is stashed in CreateParams; move this to GWLP_USERDATA
+      {$push hints}{$hints off}
+		CreateParams 	:= LPCREATESTRUCT(lPara);
+      {$pop hints}
+		Instance 		:= TDemoApp(CreateParams^.lpCreateParams);
+		SetWindowLongPtr(Handle,GWLP_USERDATA,PtrInt(Instance));
+	end else
+   	// Retrieve instance handle to TDemoApp, and jump to that wndproc
+		Instance := TDemoApp(GetWindowLongPtr(Handle,GWLP_USERDATA));
+
+	if Assigned(Instance) then
+		result := Instance.WndProc(Handle,umessage,wpara,lpara)
+	else
+		result := DefWindowProc(Handle,umessage,wpara,lpara);
+end;
 
 { TDemoApp }
 
@@ -209,13 +199,12 @@ var
 begin
     lMethod.Code := @TDemoApp.WndProc;
     lMethod.Data := Self;
-    FWndProcPointer := MakeProcInstance(lMethod);
 
     // Register window class
 
     wcex.cbSize := sizeof(WNDCLASSEX);
     wcex.style := CS_HREDRAW or CS_VREDRAW;
-    wcex.lpfnWndProc := FWndProcPointer;
+    wcex.lpfnWndProc := @JumpWndProc;
     wcex.cbClsExtra := 0;
     wcex.cbWndExtra := sizeof(LONG_PTR);
     wcex.hInstance := hInstance;
@@ -378,8 +367,10 @@ var
     renderTargetProperties: TD2D1_RENDER_TARGET_PROPERTIES;
     hwndRenderTragetproperties: TD2D1_HWND_RENDER_TARGET_PROPERTIES;
     size: TD2D1_SIZE_U;
+    sizef: TD2D1_SIZE_F;
 begin
     Result := S_OK;
+    ZeroMemory(@rcClient,SizeOf(rcClient));
     GetClientRect(m_hWnd, rcClient);
 
     if (SUCCEEDED(Result)) then
@@ -415,7 +406,8 @@ begin
         // Create a bitmap render target used to compose frames. Bitmap render
         // targets cannot be resized, so we always recreate it.
         SafeRelease(m_pFrameComposeRT);
-        Result := m_pHwndRT.CreateCompatibleRenderTarget(DX12.D2D1.SizeF(m_cxGifImage, m_cyGifImage), nil, nil,
+        sizef := DX12.D2D1.SizeF(m_cxGifImage, m_cyGifImage);
+        Result := m_pHwndRT.CreateCompatibleRenderTarget(@sizef, nil, nil,
             D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, m_pFrameComposeRT);
 
     end;
@@ -439,8 +431,8 @@ var
 begin
     Result := S_OK;
 
-
-    // Top and left of the client rectangle are both 0
+    // Top and left of the client rectangle are both 0    
+    ZeroMemory(@rcClient,SizeOf(rcClient));
     GetClientRect(m_hWnd, rcClient);
 
     if (SUCCEEDED(Result)) then
@@ -563,9 +555,6 @@ begin
             // We restore the previous composed frame first
             Result := RestoreSavedFrame();
         end;
-        else
-            // Invalid disposal method
-            Result := E_FAIL;
     end;
 end;
 

@@ -4,6 +4,9 @@
 *.a
 *.exe
 *.or
+*.obj
+*.res
+*.compiled
 
 # Windows image file caches
 Thumbs.db
