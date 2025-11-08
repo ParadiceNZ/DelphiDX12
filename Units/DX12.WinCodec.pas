@@ -294,11 +294,11 @@ type
 
 
     TWICComponentEnumerateOptions = (
+        WICComponentEnumerateDisabled = Longint($80000000),
         WICComponentEnumerateDefault = 0,
         WICComponentEnumerateRefresh = $1,
-        WICComponentEnumerateDisabled = $80000000,
-        WICComponentEnumerateUnsigned = $40000000,
         WICComponentEnumerateBuiltInOnly = $20000000,
+        WICComponentEnumerateUnsigned = $40000000,
         WICCOMPONENTENUMERATEOPTIONS_FORCE_DWORD = $7fffffff
         );
 
@@ -331,7 +331,7 @@ type
         WICBitmapPaletteTypeFixedHalftone64 = $5,
         WICBitmapPaletteTypeFixedHalftone125 = $6,
         WICBitmapPaletteTypeFixedHalftone216 = $7,
-        WICBitmapPaletteTypeFixedWebPalette = WICBitmapPaletteTypeFixedHalftone216,
+        //WICBitmapPaletteTypeFixedWebPalette = WICBitmapPaletteTypeFixedHalftone216,
         WICBitmapPaletteTypeFixedHalftone252 = $8,
         WICBitmapPaletteTypeFixedHalftone256 = $9,
         WICBitmapPaletteTypeFixedGray4 = $a,
@@ -343,7 +343,7 @@ type
 
     TWICBitmapDitherType = (
         WICBitmapDitherTypeNone = 0,
-        WICBitmapDitherTypeSolid = 0,
+        //WICBitmapDitherTypeSolid = 0,
         WICBitmapDitherTypeOrdered4x4 = $1,
         WICBitmapDitherTypeOrdered8x8 = $2,
         WICBitmapDitherTypeOrdered16x16 = $3,
@@ -401,19 +401,19 @@ type
 
 
     TWICProgressNotification = (
+        WICProgressNotificationAll = Longint($ffff0000),
         WICProgressNotificationBegin = $10000,
         WICProgressNotificationEnd = $20000,
         WICProgressNotificationFrequent = $40000,
-        WICProgressNotificationAll = $ffff0000,
         WICPROGRESSNOTIFICATION_FORCE_DWORD = $7fffffff
         );
 
 
     TWICComponentSigning = (
+        WICComponentDisabled = Longint($80000000),
         WICComponentSigned = $1,
         WICComponentUnsigned = $2,
         WICComponentSafe = $4,
-        WICComponentDisabled = $80000000,
         WICCOMPONENTSIGNING_FORCE_DWORD = $7fffffff
         );
 
@@ -674,7 +674,7 @@ type
         WICWhitePointUnderwater = $80,
         WICWhitePointCustom = $100,
         WICWhitePointAutoWhiteBalance = $200,
-        WICWhitePointAsShot = WICWhitePointDefault,
+        //WICWhitePointAsShot = WICWhitePointDefault,
         WICNAMEDWHITEPOINT_FORCE_DWORD = $7fffffff
         );
 

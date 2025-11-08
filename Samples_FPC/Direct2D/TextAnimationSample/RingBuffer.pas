@@ -81,7 +81,7 @@ end;
 
 function TRingBuffer.GetLast: LONGLONG;
 begin
-    Result := FElements[(FStart + FCount - 1) mod FMaxElements];
+    Result := FElements[Int64((FStart) + Int64(FCount) - 1) mod FMaxElements];
 end;
 
 

@@ -11,7 +11,7 @@ uses
     RingBuffer;
 
 const
-    D2DERR_RECREATE_TARGET = $8899000C;
+    D2DERR_RECREATE_TARGET = HResult($8899000C);
 
 type
     TAnimationStyle = (
@@ -19,6 +19,7 @@ type
         Translation = 1,
         Rotation = 2,
         Scaling = 4);
+    TAnimationStyles = set of TAnimationStyle;
 
     TTextRenderingMethod = (
         Default,
@@ -49,7 +50,7 @@ type
         msc_fontSize: single;
         sc_helloWorld: PWideChar;
         stringLength: UINT;
-        m_animationStyle: UINT32;
+        m_animationStyle: TAnimationStyles;
         m_renderingMethod: UINT32;
         sc_lastTimeStatusShown: LONGLONG;
 
@@ -83,7 +84,13 @@ function GetModuleHandleExW(dwFlags: DWORD; lpModuleName: LPCWSTR; var phModule:
 
 implementation
 
-
+ // Initialize variables to prevent FPC warnings
+{$push}{$warn 5057 off}{$warn 5058 off}
+procedure ZeroVar (out Struct; const Size: PtrInt);
+begin
+   FillChar(Struct,Size,#0); // FillChar itself generates the same hint
+end;
+{$pop}
 
 procedure SafeRelease(ppInterfaceToRelease: IUnknown);
 begin
@@ -231,6 +238,7 @@ begin
     hr := S_OK;
     if (m_pRT = nil) then
     begin
+        ZeroVar(rc,SizeOf(rc));
         GetClientRect(m_hwnd, rc);
         size := DX12.D2D1.SizeU(rc.right - rc.left, rc.bottom - rc.top);
         // Create a D2D render target
@@ -312,11 +320,13 @@ var
 begin
     // We use a ring buffer to store the clock time for the last 10 frames.
     // This lets us eliminate a lot of noise when computing framerate.
+    ZeroVar(time,Sizeof(Time));
     QueryPerformanceCounter(time);
     m_times.Add(time);
     Result := CreateDeviceResources();
     if (SUCCEEDED(Result) and not (Ord(m_pRT.CheckWindowState) and Ord(D2D1_WINDOW_STATE_OCCLUDED) = Ord(D2D1_WINDOW_STATE_OCCLUDED))) then
     begin
+         ZeroVar(transform,Sizeof(transform));
         CalculateTransform(transform);
         m_pRT.BeginDraw();
         m_pRT.Clear(DX12.D2D1.ColorF(DX12.D2D1.White));
@@ -419,9 +429,9 @@ procedure TDemoApp.UpdateWindowText;
 var
     frequency: TLargeInteger;
     fps: single;
-    style: PWideChar;
-    method: PWideChar;
-    title: PChar;
+    style: AnsiString;
+    method: AnsiString;
+    title: AnsiString;
     lCount: integer;
     lLast, lFirst: LOngLong;
     lDiff: LongLong;
@@ -433,6 +443,7 @@ begin
     begin
         // Determine the frame rate by computing the difference in clock time
         // between this frame and the frame we rendered 10 frames ago.
+        frequency := 0;
         sc_lastTimeStatusShown := m_times.GetLast();
         QueryPerformanceFrequency(frequency);
         fps := 0.0;
@@ -443,19 +454,18 @@ begin
             lFirst := m_times.GetFirst;
             lDiff := lLast - lFirst;
             if lDiff <> 0 then
-                fps := (lCount - 1) * frequency / (lDiff);
+                fps := (int64(lCount) - 1) * frequency / (lDiff);
         end;
         // Add other useful information to the window title.
-        case (m_animationStyle) of
-            Ord(TAnimationStyle.None):
-                style := 'None';
-            Ord(TAnimationStyle.Translation):
-                style := 'Translation';
-            Ord(TAnimationStyle.Rotation):
-                style := 'Rotation';
-            Ord(TAnimationStyle.Scaling):
-                style := 'Scale';
-        end;
+        Style := '';
+        if Translation in m_animationStyle then
+           Style := Style + 'Translation,';
+        if Rotation in m_animationStyle then
+           Style := Style + 'Rotation,';
+        if Scaling in m_animationStyle then
+           Style := Style + 'Scaling,';
+        if Length(Style) > 0 then
+           Style := Copy(Style,1,Length(Style)-1);
 
         case (m_renderingMethod) of
             Ord(TTextRenderingMethod.Default):
@@ -466,21 +476,12 @@ begin
                 method := 'UseA8Target';
         end;
 
-        title := PChar('AnimationStyle: ' + FloatToStrF(fps, ffNumber, 8, 1));
-        {
-        StringCchPrintf(
-            title,
-            ARRAYSIZE(title),
-            'AnimationStyle: %s%s%s, Method: %s, %#.1f fps',
-            (m_animationStyle & AnimationStyle.Translation) ? L'+t' : L'-t',
-            (m_animationStyle & AnimationStyle.Rotation) ? L'+r' : L'-r',
-            (m_animationStyle & AnimationStyle.Scaling) ? L'+s' : L'-s',
-            method,
-            fps
-            );
-        }
+        title :=
+                'AnimationStyle: ' + style +
+                ', Method: ' + method +
+                ', ' + FloatToStrF(fps, ffNumber, 8, 1) + 'fps';
 
-        SetWindowText(m_hwnd, title);
+        SetWindowText(m_hwnd, PChar(title));
     end;
 end;
 
@@ -509,7 +510,7 @@ begin
     Result := S_OK;
     if (resetClock) then
     begin
-        m_startTime := GetTickCount();
+        m_startTime := GetTickCount64();
     end;
     // Release the opacity mask. We will regenerate it if the current animation
     // style demands it.
@@ -564,7 +565,7 @@ begin
         // Create the compatible render target using desiredPixelSize to avoid
         // blurriness issues caused by a fractional-pixel desiredSize.
         alphaOnlyFormat := DX12.D2D1.PixelFormat(DXGI_FORMAT_A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED);
-        Result := m_pRT.CreateCompatibleRenderTarget(TD2D_SIZE_F(nil^), @maskPixelSize, @alphaOnlyFormat,
+        Result := m_pRT.CreateCompatibleRenderTarget(nil, @maskPixelSize, @alphaOnlyFormat,
             D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, m_pOpacityRT);
         if (SUCCEEDED(Result)) then
         begin
@@ -602,7 +603,7 @@ var
     size: TD2D1_SIZE_F;
 begin
     // calculate a 't' value that will linearly interpolate from 0 to 1 and back every 20 seconds
-    currentTime := GetTickCount();
+    currentTime := GetTickCount64();
     if (m_startTime = 0) then
     begin
         m_startTime := currentTime;
@@ -616,17 +617,17 @@ begin
     rotation := 0;
     translationOffset := 0;
     scaleMultiplier := 1.0;
-    if (m_animationStyle and Ord(TAnimationStyle.Translation) = Ord(TAnimationStyle.Translation)) then
+    if Translation in m_animationStyle then
     begin
         // range from -100 to 100
         translationOffset := (t - 0.5) * 200;
     end;
-    if (m_animationStyle and Ord(TAnimationStyle.Rotation) = Ord(TAnimationStyle.Rotation)) then
+    if TAnimationStyle.Rotation in m_animationStyle then
     begin
         // range from 0 to 360
         rotation := t * 360.0;
     end;
-    if (m_animationStyle and Ord(TAnimationStyle.Scaling) = Ord(TAnimationStyle.Scaling)) then
+    if Scaling in m_animationStyle then
     begin
         // range from 1/4 to 2x the normal size
         scaleMultiplier := t * 1.75 + 0.25;
@@ -660,37 +661,25 @@ begin
     case Key of
         't':
         begin
-            if (m_animationStyle and Ord(TAnimationStyle.Translation) = Ord(TAnimationStyle.Translation)) then
-            begin
-                m_animationStyle := m_animationStyle and not Ord(TAnimationStyle.Translation);
-            end
+            if (TAnimationStyle.Translation in m_animationStyle) then
+               Exclude(m_animationStyle,Translation)
             else
-            begin
-                m_animationStyle := m_animationStyle or Ord(TAnimationStyle.Translation);
-            end;
+               Include(m_animationStyle,Translation);
         end;
         'r':
         begin
-            if (m_animationStyle and Ord(TAnimationStyle.Rotation) = Ord(TAnimationStyle.Rotation)) then
-            begin
-                m_animationStyle := m_animationStyle and not Ord(TAnimationStyle.Rotation);
-            end
+            if (TAnimationStyle.Rotation in m_animationStyle) then
+               Exclude(m_animationStyle,Rotation)
             else
-            begin
-                m_animationStyle := m_animationStyle or Ord(TAnimationStyle.Rotation);
-            end;
+               Include(m_animationStyle,Rotation);
         end;
 
         's':
         begin
-            if (m_animationStyle and Ord(TAnimationStyle.Scaling) = Ord(TAnimationStyle.Scaling)) then
-            begin
-                m_animationStyle := m_animationStyle and not Ord(TAnimationStyle.Scaling);
-            end
+            if (TAnimationStyle.Scaling in m_animationStyle) then
+               Exclude(m_animationStyle,Scaling)
             else
-            begin
-                m_animationStyle := m_animationStyle or Ord(TAnimationStyle.Scaling);
-            end;
+               Include(m_animationStyle,Scaling);
         end;
         '1':
         begin
@@ -739,6 +728,7 @@ var
     Height: uint;
     ps: PAINTSTRUCT;
 begin
+     ZeroVar(ps,Sizeof(ps));
     case (umessage) of
         WM_SIZE:
         begin
@@ -785,7 +775,7 @@ begin
     m_pBlackBrush := nil;
     m_pOpacityRT := nil;
     m_startTime := 0;
-    m_animationStyle := Ord(TAnimationStyle.Translation);
+    m_animationStyle := [TAnimationStyle.Translation];
     m_renderingMethod := Ord(TTextRenderingMethod.Default);
     sc_lastTimeStatusShown := 0;
     m_times := TRingBuffer.Create(10);
@@ -821,7 +811,6 @@ var
     dpiX: single;
     dpiY: single;
     lMethod: TMethod;
-    a: word;
 begin
     m_fRunning := False;
     GetModuleHandleExW(0, 'TextAnimationSample', FInstance);
@@ -886,6 +875,7 @@ procedure TDemoApp.RunMessageLoop;
 var
     msg: TMsg;
 begin
+     zerovar(msg,sizeof(msg));
     while (self.IsRunning()) do
     begin
         if (PeekMessage(msg, 0, 0, 0, PM_REMOVE)) then

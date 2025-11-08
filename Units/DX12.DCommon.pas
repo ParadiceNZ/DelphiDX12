@@ -9,13 +9,12 @@ interface
 {$Z4}
 
 uses
-    Windows, Classes, SysUtils, DX12.DXGI;
+    Classes, SysUtils, DX12.DXGI;
 
 type
     TDWRITE_MEASURING_MODE = (DWRITE_MEASURING_MODE_NATURAL, DWRITE_MEASURING_MODE_GDI_CLASSIC, DWRITE_MEASURING_MODE_GDI_NATURAL);
 
     // {$IF NTDDI_VERSION >= NTDDI_WIN10_RS1 }
-
 
     // Fonts may contain multiple drawable data formats for glyphs. These flags specify which formats
     // are supported in the font, either at a font-wide level or per glyph, and the app may use them
@@ -49,7 +48,7 @@ type
 
 
     TD2D1_ALPHA_MODE = (D2D1_ALPHA_MODE_UNKNOWN = 0, D2D1_ALPHA_MODE_PREMULTIPLIED = 1, D2D1_ALPHA_MODE_STRAIGHT = 2, D2D1_ALPHA_MODE_IGNORE = 3,
-        D2D1_ALPHA_MODE_FORCE_DWORD = $FFFFFFFF);
+        D2D1_ALPHA_MODE_FORCE_DWORD = $7FFFFFFF);
 
     TD2D1_PIXEL_FORMAT = record
         format: TDXGI_FORMAT;
