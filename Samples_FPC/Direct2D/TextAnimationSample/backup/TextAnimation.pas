@@ -690,12 +690,10 @@ var
 	CreateParams	:	LPCREATESTRUCT;
 begin
 	if umessage = WM_NCCREATE then begin
-		// TDemoApp.Self instance is stashed in CreateParams; move this to GWLP_USERDATA
 		CreateParams 	:= LPCREATESTRUCT(lPara);
 		Instance 		:= TDemoApp(CreateParams^.lpCreateParams);
 		SetWindowLongPtr(Handle,GWLP_USERDATA,PtrInt(Instance));
 	end else
-   	// Retrieve instance handle to TDemoApp, and jump to that wndproc
 		Instance := TDemoApp(GetWindowLongPtr(Handle,GWLP_USERDATA));
 
 	if Assigned(Instance) then
