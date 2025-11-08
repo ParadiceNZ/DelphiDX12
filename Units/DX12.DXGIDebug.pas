@@ -107,7 +107,7 @@ type
         ['{D67441C7-672A-476f-9E82-CD55B44949CE}']
         function SetMessageCountLimit(Producer: TDXGI_DEBUG_ID; MessageCountLimit: UINT64): HResult; stdcall;
         procedure ClearStoredMessages(Producer: TDXGI_DEBUG_ID); stdcall;
-        function GetMessage(Producer: TDXGI_DEBUG_ID; MessageIndex: UINT64; out pMessage: TDXGI_INFO_QUEUE_MESSAGE;
+        function GetMessage(Producer: TDXGI_DEBUG_ID; MessageIndex: UINT64; pMessage: TDXGI_INFO_QUEUE_MESSAGE;
             var pMessageByteLength: SIZE_T): HResult; stdcall;
         function GetNumStoredMessagesAllowedByRetrievalFilters(Producer: TDXGI_DEBUG_ID): UINT64; stdcall;
         function GetNumStoredMessages(Producer: TDXGI_DEBUG_ID): UINT64; stdcall;
@@ -116,7 +116,7 @@ type
         function GetNumMessagesAllowedByStorageFilter(Producer: TDXGI_DEBUG_ID): UINT64; stdcall;
         function GetNumMessagesDeniedByStorageFilter(Producer: TDXGI_DEBUG_ID): UINT64; stdcall;
         function AddStorageFilterEntries(Producer: TDXGI_DEBUG_ID; pFilter: PDXGI_INFO_QUEUE_FILTER): HResult; stdcall;
-        function GetStorageFilter(Producer: TDXGI_DEBUG_ID; out pFilter: TDXGI_INFO_QUEUE_FILTER;
+        function GetStorageFilter(Producer: TDXGI_DEBUG_ID; pFilter: TDXGI_INFO_QUEUE_FILTER;
             var pFilterByteLength: SIZE_T): HResult; stdcall;
         procedure ClearStorageFilter(Producer: TDXGI_DEBUG_ID); stdcall;
         function PushEmptyStorageFilter(Producer: TDXGI_DEBUG_ID): HResult; stdcall;
@@ -126,7 +126,7 @@ type
         procedure PopStorageFilter(Producer: TDXGI_DEBUG_ID); stdcall;
         function GetStorageFilterStackSize(Producer: TDXGI_DEBUG_ID): UINT; stdcall;
         function AddRetrievalFilterEntries(Producer: TDXGI_DEBUG_ID; pFilter: PDXGI_INFO_QUEUE_FILTER): HResult; stdcall;
-        function GetRetrievalFilter(Producer: TDXGI_DEBUG_ID; out pFilter: TDXGI_INFO_QUEUE_FILTER;
+        function GetRetrievalFilter(Producer: TDXGI_DEBUG_ID; pFilter: TDXGI_INFO_QUEUE_FILTER;
             var pFilterByteLength: SIZE_T): HResult; stdcall;
         procedure ClearRetrievalFilter(Producer: TDXGI_DEBUG_ID); stdcall;
         function PushEmptyRetrievalFilter(Producer: TDXGI_DEBUG_ID): HResult; stdcall;

@@ -2144,7 +2144,7 @@ type
         procedure VSSetSamplers(StartSlot: UINT; NumSamplers: UINT; ppSamplers: PID3D11SamplerState); stdcall;
         procedure _Begin(pAsync: ID3D11Asynchronous); stdcall;
         procedure _End(pAsync: ID3D11Asynchronous); stdcall;
-        function GetData(pAsync: ID3D11Asynchronous; out pData: Pointer; DataSize: UINT; GetDataFlags: UINT): HResult; stdcall;
+        function GetData(pAsync: ID3D11Asynchronous; pData: Pointer; DataSize: UINT; GetDataFlags: UINT): HResult; stdcall;
         procedure SetPredication(pPredicate: ID3D11Predicate; PredicateValue: longbool); stdcall;
         procedure GSSetShaderResources(StartSlot: UINT; NumViews: UINT; ppShaderResourceViews: PID3D11ShaderResourceView); stdcall;
         procedure GSSetSamplers(StartSlot: UINT; NumSamplers: UINT; ppSamplers: PID3D11SamplerState); stdcall;
@@ -3079,14 +3079,14 @@ type
         function CreateCounter(pCounterDesc: PD3D11_COUNTER_DESC; out ppCounter: ID3D11Counter): HResult; stdcall;
         function CreateDeferredContext(ContextFlags: UINT; out ppDeferredContext: ID3D11DeviceContext): HResult;
             stdcall;
-        function OpenSharedResource(hResource: THANDLE; const ReturnedInterface: TGUID; out ppResource{: Pointer}): HResult; stdcall;
+        function OpenSharedResource(hResource: THANDLE; const ReturnedInterface: TGUID; out ppResource): HResult; stdcall;
         function CheckFormatSupport(Format: TDXGI_FORMAT; out pFormatSupport: UINT): HResult; stdcall;
         function CheckMultisampleQualityLevels(Format: TDXGI_FORMAT; SampleCount: UINT; out pNumQualityLevels: UINT): HResult; stdcall;
         procedure CheckCounterInfo(out pCounterInfo: TD3D11_COUNTER_INFO); stdcall;
-        function CheckCounter(pDesc: PD3D11_COUNTER_DESC; out pType: TD3D11_COUNTER_TYPE; out pActiveCounters: UINT; out szName: pansichar; var pNameLength: UINT; out szUnits: pansichar;
-            var pUnitsLength: UINT; out szDescription: pansichar; var pDescriptionLength: UINT): HResult; stdcall;
-        function CheckFeatureSupport(Feature: TD3D11_FEATURE; {out} pFeatureSupportData: Pointer; FeatureSupportDataSize: UINT): HResult; stdcall;
-        function GetPrivateData(guid: TGUID; var pDataSize: UINT; out pData: Pointer): HResult; stdcall;
+        function CheckCounter(pDesc: PD3D11_COUNTER_DESC; out pType: TD3D11_COUNTER_TYPE; out pActiveCounters: UINT; szName: pansichar; var pNameLength: UINT; szUnits: pansichar;
+            var pUnitsLength: UINT; szDescription: pansichar; var pDescriptionLength: UINT): HResult; stdcall;
+        function CheckFeatureSupport(Feature: TD3D11_FEATURE; pFeatureSupportData: Pointer; FeatureSupportDataSize: UINT): HResult; stdcall;
+        function GetPrivateData(guid: TGUID; var pDataSize: UINT; pData: Pointer): HResult; stdcall;
         function SetPrivateData(guid: TGUID; DataSize: UINT; pData: Pointer): HResult; stdcall;
         function SetPrivateDataInterface(guid: TGUID; pData: IUnknown): HResult; stdcall;
         function GetFeatureLevel(): TD3D_FEATURE_LEVEL; stdcall;
@@ -3110,10 +3110,10 @@ type
         );
 
     PFN_D3D11_CREATE_DEVICE = function(pAdapter: IDXGIAdapter; DriverType: TD3D_DRIVER_TYPE; Software: HMODULE; Flags: UINT; const pFeatureLevels: PD3D_FEATURE_LEVEL; FeatureLevels: UINT;
-        SDKVersion: UINT; out ppDevice: ID3D11Device; out pFeatureLevel: TD3D_FEATURE_LEVEL; {out} ppImmediateContext: PID3D11DeviceContext): HRESULT; stdcall;
+        SDKVersion: UINT; out ppDevice: ID3D11Device; out pFeatureLevel: TD3D_FEATURE_LEVEL; ppImmediateContext: PID3D11DeviceContext): HRESULT; stdcall;
 
 function D3D11CreateDevice(pAdapter: IDXGIAdapter; DriverType: TD3D_DRIVER_TYPE; Software: HMODULE; Flags: UINT; pFeatureLevels: PD3D_FEATURE_LEVEL; FeatureLevels: UINT; SDKVersion: UINT;
-    out ppDevice: ID3D11Device; out pFeatureLevel: TD3D_FEATURE_LEVEL; {out} ppImmediateContext: PID3D11DeviceContext): HResult;
+    out ppDevice: ID3D11Device; out pFeatureLevel: TD3D_FEATURE_LEVEL; ppImmediateContext: PID3D11DeviceContext): HResult;
     stdcall; external DLL_D3D11;
 
 { D3D11Shader.h }
@@ -3480,7 +3480,7 @@ type
     ID3D11Linker = interface(IUnknown)
         ['{59A6CD0E-E10D-4C1F-88C0-63ABA1DAF30E}']
         // Link the shader and produce a shader blob suitable to D3D runtime.
-        function Link(pEntry: ID3D11ModuleInstance; pEntryName: pansichar; pTargetName: pansichar; uFlags: UINT; out ppShaderBlob: ID3DBlob; out ppErrorBuffer: ID3DBlob): HResult; stdcall;
+        function Link(pEntry: ID3D11ModuleInstance; pEntryName: pansichar; pTargetName: pansichar; uFlags: UINT; out ppShaderBlob: ID3DBlob; ppErrorBuffer: ID3DBlob): HResult; stdcall;
         // Add an instance of a library module to be used for linking.
         function UseLibrary(pLibraryMI: ID3D11ModuleInstance): HResult; stdcall;
         // Add a clip plane with the plane coefficients taken from a cbuffer entry for 10L9 shaders.
@@ -3496,7 +3496,7 @@ type
     ID3D11FunctionLinkingGraph = interface(IUnknown)
         ['{54133220-1CE8-43D3-8236-9855C5CEECFF}']
         // Create a shader module out of FLG description.
-        function CreateModuleInstance(out ppModuleInstance: ID3D11ModuleInstance; out ppErrorBuffer: ID3DBlob): HResult; stdcall;
+        function CreateModuleInstance(out ppModuleInstance: ID3D11ModuleInstance; ppErrorBuffer: ID3DBlob): HResult; stdcall;
         function SetInputSignature(pInputParameters: PD3D11_PARAMETER_DESC; cInputParameters: UINT; out ppInputNode: ID3D11LinkingNode): HResult; stdcall;
         function SetOutputSignature(pOutputParameters: PD3D11_PARAMETER_DESC; cOutputParameters: UINT; out ppOutputNode: ID3D11LinkingNode): HResult; stdcall;
         function CallFunction(pModuleInstanceNamespace: pansichar; pModuleWithFunctionPrototype: ID3D11Module; pFunctionName: pansichar; out ppCallNode: ID3D11LinkingNode): HResult; stdcall;

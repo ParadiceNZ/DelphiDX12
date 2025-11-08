@@ -80,7 +80,8 @@
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
-      <TargetCPU Value="i386"/>
+      <TargetCPU Value="x86_64"/>
+      <TargetOS Value="win64"/>
     </CodeGeneration>
     <Linking>
       <Debugging>

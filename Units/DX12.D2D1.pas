@@ -76,7 +76,7 @@ unit DX12.D2D1;
 
 {$IFDEF FPC}
 {$MODE delphi}{$H+}
-{.warn 3057 off} // Disable inherited method warnings for interfaces
+{$warn 3057 off} // Disable inherited method warnings for interfaces
 {$modeswitch typehelpers}{$H+}{$I-}
 {$ENDIF}
 
@@ -3588,12 +3588,8 @@ function D2D1ComputeMaximumScaleFactor(const matrix: TD2D1_MATRIX_3X2_F): single
 
 function _D2D1CreateFactory(factoryType: TD2D1_FACTORY_TYPE; const riid: TGUID; out factory): HResult; stdcall; overload;
 {$IFDEF FPC}
-function _D2D1CreateFactory <TFactory>(factoryType: TD2D1_FACTORY_TYPE; out factory): HResult;
-    stdcall; overload;
-
-
-function _D2D1CreateFactory  <TFactory>(factoryType: TD2D1_FACTORY_TYPE; const factoryOptions: TD2D1_FACTORY_OPTIONS; out Factory): HResult;
-    stdcall; overload;
+function _D2D1CreateFactory <TFactory>(factoryType: TD2D1_FACTORY_TYPE; out factory): HResult; stdcall; overload;
+function _D2D1CreateFactory <TFactory>(factoryType: TD2D1_FACTORY_TYPE; const factoryOptions: TD2D1_FACTORY_OPTIONS; out Factory): HResult; stdcall; overload;
 {$ENDIF}
 
 { D2D1 Helper functions }
@@ -3786,7 +3782,6 @@ begin
     Result :=
         _D2D1CreateFactory(factoryType, lGUID, factory);
 end;
-
 
 
 function _D2D1CreateFactory<TFactory>(factoryType: TD2D1_FACTORY_TYPE; const factoryOptions: TD2D1_FACTORY_OPTIONS; out Factory): HResult; stdcall;

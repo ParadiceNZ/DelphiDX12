@@ -197,7 +197,7 @@ begin
     hr := S_OK;
     if (m_pRT = nil) then
     begin
-        ZeroMemory(@rc,SizeOf(rc));
+        //ZeroMemory(@rc,SizeOf(rc));
         GetClientRect(m_hwnd, rc);
         size := DX12.D2D1.SizeU(rc.right - rc.left, rc.bottom - rc.top);
         // Create a D2D render target
@@ -217,11 +217,7 @@ begin
             // mode to aliased up front.
             m_pRT.SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
             //create a black brush
-            {$IF FPC_FULLVERSION >= 30101}
             hr := m_pRT.CreateSolidColorBrush(DX12.D2D1.ColorF(DX12.D2D1.Black),{ nil,} m_pBlackBrush); // calling the helper function
-            {$ELSE}
-             hr := m_pRT.CreateSolidColorBrush(DX12.D2D1.ColorF(DX12.D2D1.Black), nil, m_pBlackBrush);
-            {$ENDIF}
         end;
         if (SUCCEEDED(hr)) then
         begin
@@ -279,13 +275,13 @@ var
 begin
     // We use a ring buffer to store the clock time for the last 10 frames.
     // This lets us eliminate a lot of noise when computing framerate.
-    ZeroMemory(@time,Sizeof(Time));
+    //ZeroMemory(@time,Sizeof(Time));
     QueryPerformanceCounter(time);
     m_times.Add(time);
     Result := CreateDeviceResources();
     if (SUCCEEDED(Result) and not (Ord(m_pRT.CheckWindowState) and Ord(D2D1_WINDOW_STATE_OCCLUDED) = Ord(D2D1_WINDOW_STATE_OCCLUDED))) then
     begin
-         ZeroMemory(@transform,Sizeof(transform));
+        // ZeroMemory(@transform,Sizeof(transform));
         CalculateTransform(transform);
         m_pRT.BeginDraw();
         m_pRT.Clear(DX12.D2D1.ColorF(DX12.D2D1.White));
@@ -592,13 +588,10 @@ begin
         // range from 1/4 to 2x the normal size
         scaleMultiplier := t * 1.75 + 0.25;
     end;
-    if m_pRT <> nil then
+    if Assigned(m_pRT) then
     begin
         size := m_pRT.GetSize;
-    end else begin
-		size.Width := 1;
-		size.Height := 1;
-	 end;
+    end;
     pTransform := DX12.D2D1.Matrix3x2F_Rotation(rotation, DX12.D2D1.Point2F(0, 0)) * DX12.D2D1.Matrix3x2F_Scale(scaleMultiplier,
         scaleMultiplier, DX12.D2D1.Point2F(0, 0)) * DX12.D2D1.Matrix3x2F_Translation(translationOffset + size.Width / 2.0,
         translationOffset + size.Height / 2.0);
@@ -711,7 +704,7 @@ var
     Height: uint;
     ps: PAINTSTRUCT;
 begin
-     ZeroMemory(@ps,Sizeof(ps));
+     //ZeroMemory(@ps,Sizeof(ps));
     case (umessage) of
         WM_SIZE:
         begin
@@ -854,7 +847,7 @@ procedure TDemoApp.RunMessageLoop;
 var
     msg: TMsg;
 begin
-	ZeroMemory(@msg,sizeof(msg));
+	//ZeroMemory(@msg,sizeof(msg));
     while (self.IsRunning()) do
     begin
         if (PeekMessage(msg, 0, 0, 0, PM_REMOVE)) then
